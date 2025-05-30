@@ -169,13 +169,11 @@ public class GUI extends javax.swing.JFrame {
         return;
     }
 
-    // Get the ID from column 0 — assuming it's always there
     int id = (int) jTable1.getValueAt(row, 0);
     String oldValue = jTable1.getValueAt(row, col).toString();
     String newValue = JOptionPane.showInputDialog(this, "Edit value:", oldValue);
-    if (newValue == null) return; // cancel
+    if (newValue == null) return; // User cancelled
 
-    // Match column index to actual column name in your database
     String columnName = switch (col) {
         case 1 -> "name";
         case 2 -> "price";
@@ -192,11 +190,21 @@ public class GUI extends javax.swing.JFrame {
         String sql = "UPDATE products SET " + columnName + " = ? WHERE id = ?";
         PreparedStatement pst = conn.prepareStatement(sql);
 
-        // Use appropriate data type
+        // Validation and type handling
         if (columnName.equals("price")) {
-            pst.setDouble(1, Double.parseDouble(newValue));
+            double price = Double.parseDouble(newValue);
+            if (price < 0) {
+                JOptionPane.showMessageDialog(this, "Price cannot be negative.");
+                return;
+            }
+            pst.setDouble(1, price);
         } else if (columnName.equals("quantity")) {
-            pst.setInt(1, Integer.parseInt(newValue));
+            int qty = Integer.parseInt(newValue);
+            if (qty < 0) {
+                JOptionPane.showMessageDialog(this, "Quantity cannot be negative.");
+                return;
+            }
+            pst.setInt(1, qty);
         } else {
             pst.setString(1, newValue);
         }
@@ -207,6 +215,8 @@ public class GUI extends javax.swing.JFrame {
         JOptionPane.showMessageDialog(this, "Cell updated successfully!");
         loadProducts();
 
+    } catch (NumberFormatException nfe) {
+        JOptionPane.showMessageDialog(this, "Invalid number input: " + newValue);
     } catch (Exception e) {
         JOptionPane.showMessageDialog(this, "Update error: " + e.getMessage());
     }

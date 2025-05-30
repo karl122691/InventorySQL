@@ -114,43 +114,68 @@ public class Create extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void SaveActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_SaveActionPerformed
-    try (Connection conn = DBConnection.getConnection()) {
-        String sql = "INSERT INTO products (name, price, quantity) VALUES (?, ?, ?)";
-        PreparedStatement pst = conn.prepareStatement(sql);
+try (Connection conn = DBConnection.getConnection()) {
+    // Validate input before inserting
+    String name = Product.getText().trim();
+    String priceText = Price.getText().trim();
+    String quantityText = Quantity.getText().trim();
 
-        pst.setString(1, Product.getText());
-        pst.setDouble(2, Double.parseDouble(Price.getText()));
-        pst.setInt(3, Integer.parseInt(Quantity.getText()));
+    if (name.isEmpty() || priceText.isEmpty() || quantityText.isEmpty()) {
+        JOptionPane.showMessageDialog(this, "All fields must be filled out.");
+        return;
+    }
 
-        int rows = pst.executeUpdate();
+    double price;
+    int quantity;
 
-        if (rows > 0) {
-            int choice = JOptionPane.showConfirmDialog(
-                this,
-                "Product saved successfully!\nDo you want to add another product?",
-                "Create Another?",
-                JOptionPane.YES_NO_OPTION
-            );
+    try {
+        price = Double.parseDouble(priceText);
+        quantity = Integer.parseInt(quantityText);
+    } catch (NumberFormatException nfe) {
+        JOptionPane.showMessageDialog(this, "Price and Quantity must be valid numbers.");
+        return;
+    }
 
-            if (choice == JOptionPane.YES_OPTION) {
-                // ✅ Clear fields for next product
-                Product.setText("");
-                Price.setText("");
-                Quantity.setText("");
-                Product.requestFocus();
-            } else {
-                // ✅ Return to main GUI
-                this.dispose();
-                if (mainForm != null) {
-                    mainForm.setVisible(true);
-                }
+    if (price < 0 || quantity < 0) {
+        JOptionPane.showMessageDialog(this, "Price and Quantity cannot be negative.");
+        return;
+    }
+
+    String sql = "INSERT INTO products (name, price, quantity) VALUES (?, ?, ?)";
+    PreparedStatement pst = conn.prepareStatement(sql);
+
+    pst.setString(1, name);
+    pst.setDouble(2, price);
+    pst.setInt(3, quantity);
+
+    int rows = pst.executeUpdate();
+
+    if (rows > 0) {
+        int choice = JOptionPane.showConfirmDialog(
+            this,
+            "Product saved successfully!\nDo you want to add another product?",
+            "Create Another?",
+            JOptionPane.YES_NO_OPTION
+        );
+
+        if (choice == JOptionPane.YES_OPTION) {
+            Product.setText("");
+            Price.setText("");
+            Quantity.setText("");
+            Product.requestFocus();
+        } else {
+            this.dispose();
+            if (mainForm != null) {
+                mainForm.setVisible(true);
             }
         }
-
-    } catch (Exception e) {
-        JOptionPane.showMessageDialog(this, "Error: " + e.getMessage());
     }
-    mainForm.loadProducts();
+
+} catch (Exception e) {
+    JOptionPane.showMessageDialog(this, "Error: " + e.getMessage());
+}
+
+mainForm.loadProducts();
     }//GEN-LAST:event_SaveActionPerformed
 
     private void ExitActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ExitActionPerformed
